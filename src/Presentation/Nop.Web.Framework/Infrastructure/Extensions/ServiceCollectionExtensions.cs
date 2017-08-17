@@ -102,7 +102,10 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             //override cookie name
             services.AddAntiforgery(options =>
             {
-                options.CookieName = ".Nop.Antiforgery";
+                options.Cookie = new CookieBuilder
+                {
+                    Name = ".Nop.Antiforgery"
+                };
             });
         }
 
@@ -114,8 +117,11 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         {
             services.AddSession(options =>
             {
-                options.CookieName = ".Nop.Session";
-                options.CookieHttpOnly = true;
+                options.Cookie = new CookieBuilder
+                {
+                    Name = ".Nop.Session",
+                    HttpOnly = true
+                };
             });
         }
 
@@ -141,11 +147,36 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         /// <param name="services">Collection of service descriptors</param>
         public static void AddNopAuthentication(this IServiceCollection services)
         {
-            //set the authentication scheme corresponding to the default middleware
-            services.AddAuthentication(options =>
+            //set default authentication schemes
+            var authenticationBuilder = services.AddAuthentication(options =>
             {
-                options.SignInScheme = NopCookieAuthenticationDefaults.ExternalAuthenticationScheme;
+                options.DefaultChallengeScheme = NopCookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = NopCookieAuthenticationDefaults.ExternalAuthenticationScheme;
             });
+
+            //add main cookie authentication
+            authenticationBuilder.AddCookie(NopCookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.Cookie = new CookieBuilder
+                {
+                    Name = NopCookieAuthenticationDefaults.CookiePrefix + NopCookieAuthenticationDefaults.AuthenticationScheme,
+                    HttpOnly = true
+                };
+                options.LoginPath = NopCookieAuthenticationDefaults.LoginPath;
+                options.AccessDeniedPath = NopCookieAuthenticationDefaults.AccessDeniedPath;
+            });
+
+            //add external authentication
+            authenticationBuilder.AddCookie(NopCookieAuthenticationDefaults.ExternalAuthenticationScheme, options =>
+             {
+                 options.Cookie = new CookieBuilder
+                 {
+                     Name = NopCookieAuthenticationDefaults.CookiePrefix + NopCookieAuthenticationDefaults.ExternalAuthenticationScheme,
+                     HttpOnly = true
+                 };
+                 options.LoginPath = NopCookieAuthenticationDefaults.LoginPath;
+                 options.AccessDeniedPath = NopCookieAuthenticationDefaults.AccessDeniedPath;
+             });
         }
 
         /// <summary>
